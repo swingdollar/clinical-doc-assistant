@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 from flask import Flask, request, jsonify, render_template
+from src.pii_stripper.analyzer import create_phi_analyzer
+from src.validators.soap_validator import create_validator
 
 
 app = Flask(__name__, template_folder="../templates")
