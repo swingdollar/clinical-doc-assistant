@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Documentation Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 150px;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .result-header h3 {
+            color: #333;
+        }
+        .badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .badge.demo {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #667eea;
+        }
+        .section-content {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .field {
+            margin-bottom: 10px;
+        }
+        .field-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+        .field-value {
+            color: #333;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .error.show {
+            display: block;
+        }
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Clinical Documentation Assistant</h1>
+            <p>Generate SOAP notes from patient encounters</p>
+        </div>
+
+        <div class="card">
+            <div class="form-group">
+                <label for="encounter">Patient Encounter Data</label>
+                <textarea id="encounter" placeholder="Enter patient encounter details...
+
+Example:
+Patient John Smith presents with chest pain radiating to left arm. Onset 2 hours ago. History of hypertension and diabetes. Current medications: Lisinopril 10mg, Metformin 500mg. No known allergies. Vitals: BP 140/90, HR 100, Temp 98.6F"></textarea>
+            </div>
+            <button class="btn" id="generateBtn" onclick="generateSOAP()">Generate SOAP Note</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing encounter...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="card result" id="result">
+            <div class="result-header">
+                <h3>SOAP Note Generated</h3>
+                <span class="badge" id="badge">Demo Mode</span>
+            </div>
+
+            <div class="section">
+                <h4>Subjective (S)</h4>
+                <div class="section-content" id="subjective"></div>
+            </div>
+
+            <div class="section">
+                <h4>Objective (O)</h4>
+                <div class="section-content" id="objective"></div>
+            </div>
+
+            <div class="section">
+                <h4>Assessment (A)</h4>
+                <div class="section-content" id="assessment"></div>
+            </div>
+
+            <div class="section">
+                <h4>Plan (P)</h4>
+                <div class="section-content" id="plan"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+
+        async function generateSOAP() {
+            const encounter = document.getElementById('encounter').value.trim();
+            if (!encounter) {
+                showError('Please enter patient encounter data');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            hideResult();
+
+            try {
+                const response = await fetch(`${API_URL}/api/v1/demo-soap`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ encounter_text: encounter })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResult(data);
+                } else {
+                    showError(data.error || 'Failed to generate SOAP note');
+                }
+            } catch (err) {
+                showError('Connection error. Please check if the server is running.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResult(data) {
+            const soap = data.soap_note;
+            const badge = document.getElementById('badge');
+
+            if (data.mode === 'demo') {
+                badge.textContent = 'Demo Mode';
+                badge.className = 'badge demo';
+            } else {
+                badge.textContent = 'Generated';
+                badge.className = 'badge';
+            }
+
+            document.getElementById('subjective').innerHTML = formatSection(soap.subjective);
+            document.getElementById('objective').innerHTML = formatSection(soap.objective);
+            document.getElementById('assessment').innerHTML = formatSection(soap.assessment);
+            document.getElementById('plan').innerHTML = formatSection(soap.plan);
+
+            showResult();
+        }
+
+        function formatSection(section) {
+            if (!section) return '<p>No data</p>';
+
+            let html = '';
+            for (const [key, value] of Object.entries(section)) {
+                if (value && value !== '') {
+                    if (Array.isArray(value)) {
+                        html += `<div class="field"><span class="field-label">${formatKey(key)}:</span> <span class="field-value">${value.join(', ')}</span></div>`;
+                    } else if (typeof value === 'object') {
+                        html += `<div class="field"><span class="field-label">${formatKey(key)}:</span> <span class="field-value">${JSON.stringify(value)}</span></div>`;
+                    } else {
+                        html += `<div class="field"><span class="field-label">${formatKey(key)}:</span> <span class="field-value">${value}</span></div>`;
+                    }
+                }
+            }
+            return html || '<p>No data</p>';
+        }
+
+        function formatKey(key) {
+            return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('show', show);
+            document.getElementById('generateBtn').disabled = show;
+        }
+
+        function showError(message) {
+            const el = document.getElementById('error');
+            el.textContent = message;
+            el.className = 'error show';
+        }
+
+        function hideError() {
+            document.getElementById('error').className = 'error';
+        }
+
+        function showResult() {
+            document.getElementById('result').className = 'card result show';
+        }
+
+        function hideResult() {
+            document.getElementById('result').className = 'card result';
+        }
+    </script>
+</body>
+</html>

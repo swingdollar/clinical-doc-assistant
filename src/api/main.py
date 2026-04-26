@@ -8,16 +8,10 @@ import json
 from dataclasses import dataclass
 from typing import Optional
 
-from flask import Flask, request, jsonify
-
-from src.firecrawl_client.client import create_firecrawl_client, FirecrawlClient
-from src.pii_stripper.analyzer import create_phi_analyzer, PHIAnalyzer
-from src.prompt_engine.engine import create_soap_prompt_engine, SOAPPromptEngine
-from src.llm_client.client import create_llm_client, LLMClient
-from src.validators.soap_validator import create_validator, SOAPNoteValidator
+from flask import Flask, request, jsonify, render_template
 
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates")
 
 
 @dataclass
@@ -124,6 +118,12 @@ with app.app_context():
 def health_check():
     """Health check endpoint."""
     return jsonify({"status": "healthy"})
+
+
+@app.route("/")
+def index():
+    """Serve web UI."""
+    return render_template("index.html")
 
 
 @app.route("/api/v1/generate-soap", methods=["POST"])
