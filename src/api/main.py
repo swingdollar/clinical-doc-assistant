@@ -132,7 +132,7 @@ def generate_soap_note():
     global assistant
 
     if not assistant:
-        return jsonify({"error": "Assistant not configured"}), 500
+        return jsonify({"error": "Assistant not configured. Set LLM_API_KEY env var."}), 500
 
     data = request.get_json()
     if not data or "encounter_text" not in data:
@@ -154,6 +154,59 @@ def generate_soap_note():
 
     status_code = 200 if result.success else 400
     return jsonify(response), status_code
+
+
+@app.route("/api/v1/demo-soap", methods=["POST"])
+def demo_soap_note():
+    """Demo SOAP note generation without API key."""
+    data = request.get_json()
+    if not data or "encounter_text" not in data:
+        return jsonify({"error": "Missing required field: encounter_text"}), 400
+
+    encounter = data["encounter_text"].lower()
+
+    soap_note = {
+        "subjective": {
+            "chief_complaint": data["encounter_text"][:100],
+            "history_of_present_illness": "Patient presents with symptoms as described.",
+            "relevant_history": "No relevant history provided.",
+            "medications": [],
+            "allergies": [],
+            "patient_reported_symptoms": []
+        },
+        "objective": {
+            "vitals": {
+                "blood_pressure": "120/80",
+                "heart_rate": "80",
+                "temperature": "98.6F",
+                "respiratory_rate": "16",
+                "oxygen_saturation": "98%"
+            },
+            "physical_examination": ["Exam pending"],
+            "observed_symptoms": [],
+            "lab_results": []
+        },
+        "assessment": {
+            "primary_diagnosis": "Assessment pending LLM review",
+            "differential_diagnoses": [],
+            "clinical_impression": "Condition stable, requires further evaluation."
+        },
+        "plan": {
+            "treatment": ["Follow up in 1 week"],
+            "medications": "TBD after assessment",
+            "follow_up": "1 week",
+            "referrals": [],
+            "patient_education": ["Monitor symptoms"],
+            "additional_tests": "Basic labs recommended"
+        }
+    }
+
+    return jsonify({
+        "success": True,
+        "soap_note": soap_note,
+        "mode": "demo",
+        "warnings": ["Demo mode - set LLM_API_KEY for real generation"]
+    })
 
 
 @app.route("/api/v1/validate", methods=["POST"])

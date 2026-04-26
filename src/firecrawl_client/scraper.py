@@ -53,14 +53,6 @@ class WebScraper:
         selectors: Optional[Dict[str, str]] = None,
         wait_for: Optional[str] = None
     ) -> ScrapeResult:
-        """
-        Scrape a URL and extract data using CSS selectors.
-        
-        Args:
-            url: Target URL
-            selectors: Dict of {name: css_selector}, e.g. {"jobs": ".job-title"}
-            wait_for: Optional CSS selector to wait for before extracting
-        """
         try:
             browser = await self._get_browser()
             page = await browser.new_page()
@@ -95,38 +87,10 @@ class WebScraper:
             return ScrapeResult(url=url, success=False, error=str(e))
 
     async def scrape_jobs(self, url: str, job_selector: str = ".job-title") -> ScrapeResult:
-        """Scrape job listings from a site."""
         return await self.scrape(url, selectors={"results": job_selector})
-
-    async def scrape_table(self, url: str, table_selector: str = "table") -> ScrapeResult:
-        """Scrape table data from a site."""
-        try:
-            browser = await self._get_browser()
-            page = await browser.new_page()
-            await page.goto(url, wait_until="networkidle", timeout=self.timeout)
-            html = await page.content()
-            await page.close()
-
-            soup = BeautifulSoup(html, 'html.parser')
-            table = soup.select_one(table_selector)
-
-            if not table:
-                return ScrapeResult(url=url, success=False, error="Table not found")
-
-            rows = []
-            for row in table.select("tr"):
-                cells = [cell.text.strip() for cell in row.select("th, td")]
-                if cells:
-                    rows.append(cells)
-
-            return ScrapeResult(url=url, success=True, data=rows, html=html)
-
-        except Exception as e:
-            return ScrapeResult(url=url, success=False, error=str(e))
 
 
 async def scrape_target(url: str, selectors: Optional[Dict[str, str]] = None) -> ScrapeResult:
-    """Convenience function to scrape a URL."""
     scraper = WebScraper()
     try:
         return await scraper.scrape(url, selectors)
@@ -134,21 +98,9 @@ async def scrape_target(url: str, selectors: Optional[Dict[str, str]] = None) ->
         await scraper.close()
 
 
-async def scrape_jobs(url: str, job_selector: str = ".job-title") -> ScrapeResult:
-    """Scrape job listings."""
-    scraper = WebScraper()
-    try:
-        return await scraper.scrape_jobs(url, job_selector)
-    finally:
-        await scraper.close()
-
-
 if __name__ == "__main__":
     async def main():
-        result = await scrape_target(
-            "https://example.com",
-            {"titles": "h1, h2"}
-        )
+        result = await scrape_target("https://example.com", {"titles": "h1, h2"})
         print(f"Success: {result.success}")
         if result.data:
             print(f"Data: {result.data[:5]}")
